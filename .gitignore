@@ -1,0 +1,49 @@
+# =============================================================================
+# Python / Environments
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv/
+
+# =============================================================================
+# IDE / Jupyter
+# =============================================================================
+.vscode/
+.idea/
+*.swp
+.ipynb_checkpoints/
+
+# =============================================================================
+# Project Specific (Heavy files & External Repos)
+# =============================================================================
+# Ignore all downloaded weights
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Ignore raw/processed datasets
+data/
+*.zip
+*.tar.gz
+
+# Ignore cloned external repositories (managed by 00_setup.sh)
+src/bayesian-flow-networks/
+src/nanoDD/
+src/ddpm-torch/
+
+# Ignore generated outputs (logs, figures, videos)
+# Note: You can keep this commented if you WANT to push final figures to Github
+outputs/logs/*
+outputs/visual_demos/*
+!outputs/visual_demos/.gitkeep
+# outputs/figures/*
+
+# Ignore temporary huggingface cache
+.cache/
