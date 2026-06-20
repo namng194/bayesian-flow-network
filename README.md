@@ -1,7 +1,7 @@
 # BFN Seminar Experiments — README
 
 **Topic:** Bayesian Flow Networks (Graves et al. 2023) <br>
-**Hardware:** 1× NVIDIA RTX PRO Blackwell 6000 (96 GB VRAM) <br>
+**Hardware:** 1× NVIDIA RTX PRO Blackwell 6000 (96 GB VRAM, thanks my company) <br>
 
 ---
 
