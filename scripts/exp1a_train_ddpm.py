@@ -101,7 +101,8 @@ TRAIN_CONFIGS = {
 DDIM_STEPS = [10, 50, 100, 1000]
 
 
-def # setup_ddpm_repo()  # Setup repos handled by 00_setup.sh:
+# Setup repos handled by 00_setup.sh
+def setup_ddpm_repo():
     """Clone ddpm-torch if not already present."""
     if not DDPM_DIR.exists():
         print("  Cloning tqch/ddpm-torch ...")
