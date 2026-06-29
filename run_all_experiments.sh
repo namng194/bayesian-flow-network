@@ -24,6 +24,11 @@ fi
 
 # Activate venv
 source .venv/bin/activate
+## If no python in .venv, reinstall uv and python 3.11
+# curl -LsSf https://astral.sh/uv/install.sh | sh
+# source $HOME/.local/bin/env
+# uv python install 3.11
+# ls -l /home/jovyan/.local/share/uv/python/cpython-3.11-linux-x86_64-gnu/bin/python3.11
 
 echo "✓ Using Python: $(which python)"
 python --version
@@ -39,38 +44,47 @@ fi
 # ── 1. Exp 1: Continuous Image Domain (DDPM vs BFN) ──────────────────────────
 echo ""
 echo "=== [Exp 1a] Training DDPM baseline on CIFAR-10 (Quick mode: ~3h) ==="
-python scripts/exp1a_train_ddpm.py --dataset cifar10 --quick
+# nohup .venv/bin/python scripts/exp1a_train_ddpm.py --dataset cifar10 --quick > exp1a_train_ddpm_cifar10.log 2>&1 &
+.venv/bin/python scripts/exp1a_train_ddpm.py --dataset cifar10 --quick
 
 echo ""
 echo "=== [Exp 1b] Sampling speed benchmark: BFN vs DDPM/DDIM ==="
-python scripts/exp1b_sampling_time_benchmark.py
+.venv/bin/python scripts/exp1b_sampling_time_benchmark.py
 
 # ── 2. Exp 2: Discrete Text Domain (D3PM vs BFN) ─────────────────────────────
 echo ""
 echo "=== [Exp 2a] BFN n_steps ablation sweep (text8 + MNIST) (~1h) ==="
-python scripts/exp2a_nsteps_ablation.py
+.venv/bin/python scripts/exp2a_nsteps_ablation.py 
+# nohup .venv/bin/python -u scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
+# Note: edit code at bayesian-flow-network/src/bayesian-flow-networks/test.py line 39
 
 echo ""
 echo "=== [Exp 2b] Training D3PM Absorbing baseline on text8 (Quick mode: ~5h) ==="
-python scripts/exp2b_train_d3pm.py --quick
+.venv/bin/python scripts/exp2b_train_d3pm.py --quick
+# nohup .venv/bin/python scripts/exp2b_train_d3pm.py --quick > exp2b_train_d3pm.log 2>&1 &
+# Note: edit code at ./nanoDD/train.py line 246
 
 echo ""
 echo "=== [Exp 2c] Generating visual samples for qualitative analysis ==="
-python scripts/exp2c_generate_samples.py
+.venv/bin/python scripts/exp2c_generate_samples.py
+# nohup .venv/bin/python scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
 
 echo ""
 echo "=== [Exp 2d] Generating intermediate plot results ==="
-python scripts/exp2d_plot_results.py
+.venv/bin/python scripts/exp2d_plot_results.py
+# nohup .venv/bin/python scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
 
 # ── 3. Exp 3: Visualization & Intuition (Seminar Core) ───────────────────────
 echo ""
 echo "=== [Exp 3] Generating Bayesian flow process visualizations ==="
-python scripts/exp3_bayesian_flow_visualization.py
+.venv/bin/python scripts/exp3_bayesian_flow_visualization.py
+# nohup .venv/bin/python scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
 
 # ── 4. Final Aggregation ──────────────────────────────────────────────────────
 echo ""
 echo "=== [FINAL] Consolidating all metrics into presentation-ready figures ==="
-python scripts/exp_final_plots.py
+.venv/bin/python scripts/exp_final_plots.py
+# nohup .venv/bin/python scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════╗"

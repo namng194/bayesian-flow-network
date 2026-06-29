@@ -5,28 +5,11 @@ exp1b_sampling_time_benchmark.py
 Exp 1 — Benchmark sampling speed and quality:
   BFN    vs DDPM (full T=1000) vs DDIM (T=50, 100)
 
-This is the most visually compelling comparison for seminar:
-  - BFN natively supports any n_steps without architectural change
-  - DDPM needs DDIM trick to reduce steps (and quality degrades more)
-  - BFN inputs on probability simplex → gradient-based guidance possible
+Architecture: BFN runs in-process (model loaded once, timed per n_steps).
+              DDPM runs via subprocess (separate repo/deps).
 
-We measure:
-  1. Wall-clock time per batch (16 samples) at each step count
-  2. NLL/BPC (from exp2a results) — quality signal
-  3. Side-by-side visual grid: BFN-n100 vs DDIM-n100 vs DDPM-n1000
-
-Reference:
-  BFN    : https://github.com/nnaisense/bayesian-flow-networks
-  DDPM   : https://github.com/tqch/ddpm-torch
-  DDIM   : Song et al. 2020, arxiv 2010.02502
-
-Usage (run from project root, after exp1a and exp2c):
-  conda activate bfn
-  python scripts/exp1b_sampling_time_benchmark.py
-
-Outputs:
-  results/sampling_time_benchmark.json
-  plots/fig_sampling_speed_comparison.png
+Usage:
+  .venv/bin/python scripts/exp1b_sampling_time_benchmark.py [cifar10|mnist|text8]
 """
 
 import subprocess

@@ -62,13 +62,26 @@ QUICK_OVERRIDES = {
 }
 
 
+# def build_train_cmd(quick: bool = False) -> list:
+#     """Build the nanoDD train.py command."""
+#     cmd = ["python", str(NANOD_DIR / "train.py"), "d3pm_text8"]
+#     if quick:
+#         for k, v in QUICK_OVERRIDES.items():
+#             cmd.append(f"--{k}={v}")
+#     return cmd
 def build_train_cmd(quick: bool = False) -> list:
-    """Build the nanoDD train.py command."""
-    cmd = ["python", str(NANOD_DIR / "train.py"), "d3pm_text8"]
+
     if quick:
-        for k, v in QUICK_OVERRIDES.items():
-            cmd.append(f"--{k}={v}")
-    return cmd
+        print(
+            "[WARN] nanoDD does not support quick-mode overrides. "
+            "Falling back to author's d3pm_text8 config."
+        )
+
+    return [
+        "python",
+        str(NANOD_DIR / "train.py"),
+        "d3pm_text8",
+    ]
 
 
 def stream_training(cmd: list, log_path: Path):
@@ -139,7 +152,7 @@ if __name__ == "__main__":
     cmd      = build_train_cmd(quick=quick)
     log_path = RESULTS_DIR / f"d3pm_text8_train_{'quick' if quick else 'full'}.csv"
     rc       = stream_training(cmd, log_path)
-
+ 
     if rc != 0:
         print(f"\n✗ Training exited with code {rc}")
         sys.exit(rc)
