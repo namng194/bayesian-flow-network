@@ -26,50 +26,63 @@ Outputs:
   ../results/samples/text8_samples.txt       — decoded text
 """
 
+import argparse
+import gc
 import subprocess
 import sys
-import os
-import torch
 from pathlib import Path
 
-BFN_DIR      = Path(__file__).resolve().parents[1] / "src/bayesian-flow-networks"
-SAMPLES_DIR  = Path(__file__).resolve().parents[1] / "outputs/logs" / "samples"
+import matplotlib.pyplot as plt
+import torch
+
+BFN_DIR = Path(__file__).resolve().parents[1] / "src/bayesian-flow-networks"
+SAMPLES_DIR = Path(__file__).resolve().parents[1] / "outputs/logs/samples"
 SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
 
-# Import BFN data utilities for rendering
 sys.path.insert(0, str(BFN_DIR))
 
-# ── Sample configs ─────────────────────────────────────────────────────────
+from data import batch_to_images, batch_to_str
+
+
 SAMPLE_CONFIGS = {
     "mnist": {
         "config_file": BFN_DIR / "configs/mnist_discrete.yaml",
-        "load_model":  Path(__file__).resolve().parents[1] / "checkpoints/bfn/mnist_ema.pt",
-        "shape":       "[16, 28, 28, 1]",   # 16 images for a nice 4×4 grid
+        "load_model": Path(__file__).resolve().parents[1] / "checkpoints/bfn/mnist_ema.pt",
+        "shape": "[16,28,28,1]",
         "n_steps_list": [5, 10, 25, 100, 784],
         "render": "image",
     },
     "cifar10": {
         "config_file": BFN_DIR / "configs/cifar10_discretized_256bins.yaml",
-        "load_model":  Path(__file__).resolve().parents[1] / "checkpoints/bfn/cifar10_256d_ema.pt",
-        "shape":       "[16, 32, 32, 3]",
+        "load_model": Path(__file__).resolve().parents[1] / "checkpoints/bfn/cifar10_256d_ema.pt",
+        "shape": "[16,32,32,3]",
         "n_steps_list": [10, 50, 100, 1000],
         "render": "image",
     },
     "text8": {
         "config_file": BFN_DIR / "configs/text8_discrete.yaml",
-        "load_model":  Path(__file__).resolve().parents[1] / "checkpoints/bfn/text8_ema.pt",
-        "shape":       "[4, 256]",           # 4 sequences of 256 chars
+        "load_model": Path(__file__).resolve().parents[1] / "checkpoints/bfn/text8_ema.pt",
+        "shape": "[4,256]",
         "n_steps_list": [5, 10, 25, 50, 100, 500],
         "render": "text",
     },
 }
 
 
-def run_sample(dataset: str, n_steps: int, cfg: dict, seed: int = 42) -> Path:
-    """Call official sample.py and return the save path."""
+def cleanup():
+    gc.collect()
+    plt.close("all")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
+def run_sample(dataset, cfg, n_steps, seed=42):
+
     save_file = SAMPLES_DIR / f"{dataset}_n{n_steps:04d}.pt"
+
     cmd = [
-        "python", str(BFN_DIR / "sample.py"),
+        sys.executable,
+        str(BFN_DIR / "sample.py"),
         f"seed={seed}",
         f"config_file={cfg['config_file']}",
         f"load_model={cfg['load_model']}",
@@ -77,56 +90,104 @@ def run_sample(dataset: str, n_steps: int, cfg: dict, seed: int = 42) -> Path:
         f"n_steps={n_steps}",
         f"save_file={save_file}",
     ]
-    print(f"  Sampling {dataset} @ n_steps={n_steps} …", flush=True)
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=BFN_DIR)
-    if result.returncode != 0:
-        print(f"  ✗ Error:\n{result.stderr[-500:]}")
+
+    print(f"\n===== {dataset} | n_steps={n_steps} =====")
+
+    proc = subprocess.Popen(
+        cmd,
+        cwd=BFN_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    for line in proc.stdout:
+        print(line, end="")
+
+    proc.wait()
+
+    if proc.returncode != 0:
+        print("Sampling failed.")
+        cleanup()
         return None
-    print(f"    → saved to {save_file.name}")
+
     return save_file
 
 
-def render_samples(dataset: str, n_steps: int, save_pt: Path, render_mode: str):
-    """Load saved tensor and render to image or text using BFN's own utilities."""
-    if not save_pt or not save_pt.exists():
-        return
+def render(dataset, mode, n_steps, pt_file):
 
-    from data import batch_to_images, batch_to_str  # noqa: from BFN repo
+    samples = torch.load(pt_file, map_location="cpu")
 
-    samples = torch.load(save_pt, map_location="cpu")
+    if mode == "image":
 
-    if render_mode == "image":
-        out_png = SAMPLES_DIR / f"{dataset}_n{n_steps:04d}.png"
         fig = batch_to_images(samples)
-        fig.savefig(out_png, dpi=120, bbox_inches="tight")
-        print(f"    → rendered to {out_png.name}")
 
-    elif render_mode == "text":
+        out_png = SAMPLES_DIR / f"{dataset}_n{n_steps:04d}.png"
+
+        fig.savefig(
+            out_png,
+            dpi=120,
+            bbox_inches="tight",
+        )
+
+        plt.close(fig)
+
+    else:
+
+        texts = batch_to_str(samples)
+
         out_txt = SAMPLES_DIR / f"{dataset}_n{n_steps:04d}.txt"
-        texts   = batch_to_str(samples)
+
         with open(out_txt, "w") as f:
-            f.write(f"# text8 samples — n_steps={n_steps}\n\n")
+
             for i, t in enumerate(texts):
-                f.write(f"[sample {i+1}]\n{t}\n\n")
-        print(f"    → text saved to {out_txt.name}")
-        # also print a snippet
-        print(f"    Preview: {texts[0][:100]} …")
+                f.write(f"[sample {i+1}]\n")
+                f.write(t)
+                f.write("\n\n")
+
+    del samples
+
+    cleanup()
 
 
 def main():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--dataset",
+        choices=["mnist", "cifar10", "text8"],
+        required=True,
+    )
+
+    args = parser.parse_args()
+
+    cfg = SAMPLE_CONFIGS[args.dataset]
+
     print("=" * 60)
-    print("  BFN Sample Generation — all datasets")
+    print(args.dataset)
     print("=" * 60)
 
-    for dataset, cfg in SAMPLE_CONFIGS.items():
-        print(f"\n── {dataset.upper()} ──")
-        for n_steps in cfg["n_steps_list"]:
-            save_pt = run_sample(dataset, n_steps, cfg)
-            if save_pt:
-                render_samples(dataset, n_steps, save_pt, cfg["render"])
+    for n_steps in cfg["n_steps_list"]:
 
-    print("\n✓ All samples generated.")
-    print(f"  Output dir: {SAMPLES_DIR}")
+        pt = run_sample(
+            args.dataset,
+            cfg,
+            n_steps,
+        )
+
+        if pt is not None:
+            render(
+                args.dataset,
+                cfg["render"],
+                n_steps,
+                pt,
+            )
+
+    cleanup()
+
+    print("\nDone.")
 
 
 if __name__ == "__main__":

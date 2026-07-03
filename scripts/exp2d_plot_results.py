@@ -84,9 +84,21 @@ def plot_nsteps_curve(json_path: Path, metric_name: str, out_path: Path,
     with open(json_path) as f:
         data = json.load(f)
 
-    results = [r for r in data["results"] if r["bpc"] is not None and r["n_steps"] > 0]
-    steps   = [r["n_steps"] for r in results]
-    bpcs    = [r["bpc"]     for r in results]
+    results = [
+        r for r in data["results"]
+        if (not r.get("error", False))
+        and (r["n_steps"] is not None)
+    ]
+    
+    steps = [r["n_steps"] for r in results]
+    
+    if "bits_estimate" in results[0]:
+        bpcs = [r["bits_estimate"] for r in results]
+    else:
+        bpcs = [r["total_loss"] for r in results]
+    if not results:
+        print(f"No valid results in {json_path.name}")
+        return
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
 
@@ -95,7 +107,7 @@ def plot_nsteps_curve(json_path: Path, metric_name: str, out_path: Path,
     ax.scatter(steps, bpcs, color=STYLE["bfn"]["color"], s=60, zorder=5)
 
     # D3PM horizontal reference line
-    if d3pm_bpc:
+    if d3pm_bpc is not None:
         ax.axhline(d3pm_bpc, **{k: v for k, v in STYLE["d3pm"].items() if k != "marker"})
         ax.text(steps[-1] * 0.95, d3pm_bpc + 0.005, f"D3PM: {d3pm_bpc:.2f}", 
                 color=STYLE["d3pm"]["color"], ha="right", fontsize=9)
@@ -234,7 +246,13 @@ def main():
     if bfn_text8_path.exists():
         with open(bfn_text8_path) as f:
             data = json.load(f)
-        bpcs = [r["bpc"] for r in data["results"] if r["bpc"]]
+        bpcs = [
+            r["bits_estimate"]
+            for r in data["results"]
+            if (not r.get("error", False))
+            and (r["bits_estimate"] is not None)
+        ]
+        
         bfn_bpc_best = min(bpcs) if bpcs else None
 
         # Fig 1: n_steps curve (text8)

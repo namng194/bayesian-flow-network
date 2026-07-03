@@ -63,11 +63,13 @@ echo "=== [Exp 2b] Training D3PM Absorbing baseline on text8 (Quick mode: ~5h) =
 .venv/bin/python scripts/exp2b_train_d3pm.py --quick
 # nohup .venv/bin/python scripts/exp2b_train_d3pm.py --quick > exp2b_train_d3pm.log 2>&1 &
 # Note: edit code at ./nanoDD/train.py line 246
+# cat > outputs/logs/d3pm_text8_result.json
 
 echo ""
 echo "=== [Exp 2c] Generating visual samples for qualitative analysis ==="
-.venv/bin/python scripts/exp2c_generate_samples.py
-# nohup .venv/bin/python scripts/exp2a_nsteps_ablation.py > exp2a_nsteps_ablation.log 2>&1 &
+.venv/bin/python scripts/exp2c_generate_samples.py --dataset mnist
+.venv/bin/python scripts/exp2c_generate_samples.py --dataset cifar10
+.venv/bin/python scripts/exp2c_generate_samples.py --dataset text8
 
 echo ""
 echo "=== [Exp 2d] Generating intermediate plot results ==="
